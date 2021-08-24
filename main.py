@@ -27,6 +27,7 @@ db.init_app(app)
 jwt.init_app(app)
 # 註冊blueprint
 app.register_blueprint(auth,url_prefix= '/auth')
+app.register_blueprint(auth,url_prefix= '/dashboard')
 
 
 # run app

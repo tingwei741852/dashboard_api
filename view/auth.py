@@ -12,14 +12,14 @@ def sign_up():
   # 取得request資料
     received_json_data = request.get_json()
   #定義每個資料若為none的默認值，但account&password不可為none 
-    account = received_json_data.get('account')
-    password = received_json_data.get('password')
-    name = received_json_data.get('name', '')
-    auth_id = received_json_data.get('auth_id', 1)
-    dept = received_json_data.get('dept', '')
-    fab = received_json_data.get('fab', '')
-    tel = received_json_data.get('tel', '')
-    mail = received_json_data.get('mail', '')
+    account = received_json_data.get('ACCOUNT')
+    password = "000000"
+    name = received_json_data.get('NAME', '')
+    auth_id = received_json_data.get('AUTH', 1)
+    dept = received_json_data.get('DEPT', '')
+    fab = received_json_data.get('FAB', '')
+    tel = received_json_data.get('TEL', '')
+    mail = received_json_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
     if account is None or password is None:
         return 'errors: account or password is None'
@@ -40,8 +40,8 @@ def sign_up():
 def login():
   # 取得request資料
     received_json_data = request.get_json()
-    account = received_json_data.get('account')
-    password = received_json_data.get('password')
+    account = received_json_data.get('ACCOUNT')
+    password = received_json_data.get('PASSWORD')
   #如果帳號或密碼為none ，回傳error
     if account is None or password is None:
       return 'errors: account or password is None'
@@ -77,16 +77,16 @@ def GetUser():
     # 取得當前token紀錄的user
     current_user_id = get_jwt_identity()
     # 取得當前session紀錄的user
-    user_session = session.get('account')
+    user_session = session.get('ACCOUNT')
     # 如果token 和user紀錄的session不一致，回傳error
     if not current_user_id ==  user_session:
        return 'errors: token not exist'
     # query當前user的資料
     user = CMemberTable.query.filter_by(account = current_user_id).first() 
-    output['account'] = user.account
-    output['dept'] = user.dept
-    output['fab'] = user.fab
-    output['auth_id'] = user.auth_id
+    output['ACCOUNT'] = user.account
+    output['DEPT'] = user.dept
+    output['FAB'] = user.fab
+    output['AUTH'] = user.auth_id
     # 回傳資料
     return output
 
@@ -99,13 +99,13 @@ def GetAllUser():
     user = CMemberTable.query.all()
     for ele in user:
       prop = {}
-      prop['account'] = ele.account
-      prop['dept'] = ele.dept
-      prop['fab'] = ele.fab
-      prop['auth_id'] = ele.auth_id
-      prop['tel'] = ele.tel
-      prop['mail'] = ele.mail
-      prop['name'] = ele.name
+      prop['ACCOUNT'] = ele.account
+      prop['DEPT'] = ele.dept
+      prop['FAB'] = ele.fab
+      prop['AUTH'] = ele.auth_id
+      prop['TEL'] = ele.tel
+      prop['MAUL'] = ele.mail
+      prop['NAME'] = ele.name
       output.append(prop)
       # 回傳資料
     return jsonify(data =  output)
@@ -117,13 +117,13 @@ def GetAllUser():
 def update():
   received_json_data = request.get_json()
   ele ={}
-  ele['name'] = received_json_data.get('name')
-  ele['auth_id'] = received_json_data.get('auth_id')
-  ele['dept'] = received_json_data.get('dept')
-  ele['fab'] = received_json_data.get('fab')
-  ele['tel'] = received_json_data.get('tel')
-  ele['mail'] = received_json_data.get('mail')
-  update_account = received_json_data.get('account')
+  ele['NAME'] = received_json_data.get('NAME')
+  ele['AUTH'] = received_json_data.get('AUTH')
+  ele['DEPT'] = received_json_data.get('DEPT')
+  ele['FAB'] = received_json_data.get('FAB')
+  ele['TEL'] = received_json_data.get('TEL')
+  ele['MAIL'] = received_json_data.get('MAIL')
+  update_account = received_json_data.get('ACCOUNT')
   userdata = CMemberTable.query.filter_by(account=update_account).first()
   # userdata.name = 'name2'
   for col in ele:
@@ -141,7 +141,7 @@ def update():
 def delete():
  
  received_json_data = request.get_json()
- delete_account = received_json_data.get('account')
+ delete_account = received_json_data.get('ACCOUNT')
  userdata = CMemberTable.query.filter_by(account=delete_account).first()
  current_db_sessions = db.session.object_session(userdata)
  current_db_sessions.delete(userdata)
