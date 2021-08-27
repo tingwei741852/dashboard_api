@@ -16,8 +16,8 @@ def Downtime():
     for mac in machine:
         this_m_dt = {}
         this_m_dt['MACHINE_ID'] = mac.machine_id
-        this_m_dt['START_TIME'] = datetime.strftime(mac.start_time, '%Y-%m-%d %H:%M')
-        this_m_dt['END_TIME'] = datetime.strftime(mac.end_time, '%Y-%m-%d %H:%M')
+        this_m_dt['START_TIME'] = datetime.datetime.strftime(mac.start_time, '%Y-%m-%d %H:%M')
+        this_m_dt['END_TIME'] = datetime.datetime.strftime(mac.end_time, '%Y-%m-%d %H:%M')
         this_m_dt['REASON'] = mac.downtime_type
         output.append(this_m_dt)
     return jsonify(data = output)
