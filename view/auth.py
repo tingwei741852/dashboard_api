@@ -21,8 +21,8 @@ def sign_up():
     tel = received_json_data.get('TEL', '')
     mail = received_json_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
-    if account is None or password is None:
-        return 'errors: account or password is None'
+    if account is None:
+        return 'errors: account is None'
     #如果帳號已存在 ，回傳error
     if CMemberTable.query.filter_by(account = account).first() is not None:
         return 'errors: account already exist'
@@ -92,7 +92,7 @@ def GetUser():
 
 # 取得所有使用者
 @auth.route('/get_alluser', methods=['GET'])   
-@jwt_required()
+# @jwt_required()
 def GetAllUser():
     output = []
     # query當前user的資料

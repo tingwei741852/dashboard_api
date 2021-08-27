@@ -31,13 +31,13 @@ class CMachineTable(db.Model):
 
     machine_id = db.Column(db.String(50), primary_key=True, unique=True)
     machine_name = db.Column(db.String(50))
-    ope_code = db.Column(db.String(50))
+    ope_id = db.Column(db.String(50))
     machine_status = db.Column(db.String(15))
 
-    def __init__(self,machine_id, machine_name, ope_code, machine_status):
+    def __init__(self,machine_id, machine_name, ope_id, machine_status):
       self.machine_id = machine_id
       self.machine_name = machine_name
-      self.ope_code = ope_code
+      self.ope_id = ope_id
       self.machine_status = machine_status
 
 

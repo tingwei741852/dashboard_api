@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from dotenv import load_dotenv
 from .view.auth import auth
+from .view.dashboard import dashboard
 from .config import db,jwt
 
 
@@ -13,7 +14,7 @@ db_password = os.getenv('DBPASSWORD')
 db_name = os.getenv('DBNAME')
 db_host = os.getenv('DBHOST')
 db_port = os.getenv('DBPORT')
-
+print(db_host)
 # 初始化app
 app = Flask(__name__)
 # 設定jwt & session secret
@@ -27,7 +28,7 @@ db.init_app(app)
 jwt.init_app(app)
 # 註冊blueprint
 app.register_blueprint(auth,url_prefix= '/auth')
-app.register_blueprint(auth,url_prefix= '/dashboard')
+app.register_blueprint(dashboard,url_prefix= '/dashboard')
 
 
 # run app
