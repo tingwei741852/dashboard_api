@@ -1,61 +1,78 @@
-import datetime
-from flask import  Blueprint,jsonify
-from ..models.Model import RScheduleTable,CMachineTable
+from flask import request, session, Blueprint,jsonify
+from ..models.Model import RDowntimeTable
+from ..models.Model import CMaterialTable
+from ..models.Model import CMachineTable
 from ..config import db,bcrypt
-from flask_jwt_extended import jwt_required
+import datetime
+from flask_jwt_extended import create_access_token,get_jwt_identity,jwt_required
+import psycopg2
 
-# db2 = psycopg2.connect(database="dashboard", user="postgres", password="1qaz@WSX", host="140.114.60.61", port="11249")
-# cur = db.cursor()
-# 初始化biueprint
 dashboard = Blueprint('dashboard', __name__)
 
-@dashboard.route('/arrangement', methods=['GET'])
-# @jwt_required()
-def get_arrangement_detail():
+@dashboard.route('/down_time', methods=['GET'])
+def Downtime():
     output = []
-    # query當前user的資料
-    arrangement_detail = RScheduleTable.query.all()
-    # test = RDowntimeTable.query.all()
-    if arrangement_detail is None:
-        return 'errors: there is  no data exist'
-    for ele in arrangement_detail:
-        prop = {}
-        prop['order_id'] = ele.order_id
-        prop['lot'] = ele.lot_id
-        prop['start_time'] = ele.start_time
-        prop['end_time'] = ele.end_time
-        prop['machine'] = ele.machine_id
-        prop['qty'] = ele.qty
-        output.append(prop)
-    # 回傳資料
-    return jsonify(data =  output)
+    machine = RDowntimeTable.query.all()
+    for mac in machine:
+        this_m_dt = {}
+        this_m_dt['MACHINE_ID'] = mac.machine_id
+        this_m_dt['START_TIME'] = datetime.strftime(mac.start_time, '%Y-%m-%d %H:%M')
+        this_m_dt['END_TIME'] = datetime.strftime(mac.end_time, '%Y-%m-%d %H:%M')
+        this_m_dt['REASON'] = mac.downtime_type
+        output.append(this_m_dt)
+    return jsonify(data = output)
 
-@dashboard.route('/machine_performance', methods=['GET'])
+'''{
+"CAPACITY_REQ": 1260,需求產能
+"MACHINE_REQ": 15,設備需求數
+"OPEN_MACTION": 12,當前開機數
+"DOWN_MACTION": 1,當前停機數
+"TOTAL_ UTILIZATION": "61%"稼動率
+"YIELD": "72%"良率
+    }
+'''
 
-def get_machine_performance():
-  output = []
-  # query當前user的資料
-  machine = CMachineTable.query.all()
-  if machine is None:
-      return 'errors: there is  no machine data exist'
-  for ele in machine:
-      prop = {}
-      prop['machine_id'] = ele.machine_id
-      sql = f'''SELECT SUM ("qty") from "r_schedule_table" WHERE "machine_id" = '{ele.machine_id}';'''
-      produce_qty = db.engine.execute(sql).fetchone()
-      prop['produce_qty'] = int(produce_qty[0])
+@dashboard.route('/total_API', methods=['GET'])
 
-      sql = f'''SELECT SUM(extract(epoch FROM "end_time") - extract(epoch FROM "start_time")) FROM "r_schedule_table" WHERE "machine_id" = '{ele.machine_id}';'''
-      worktime = db.engine.execute(sql).fetchone()
+def TotalAPI():
+    #數現在有多少機台不能動
+    machine = RDowntimeTable.query.all()
+    down_mac = 0
+    for mac in machine:
+        now = datetime.datetime.now()
+        if mac.start_time < now and now < mac.end_time:
+            down_mac += 1
+    mac_num = len(CMachineTable.query.all())
+    open_mac = mac_num - down_mac
 
-      sql = f'''SELECT SUM(extract(epoch FROM "end_time") - extract(epoch FROM "start_time")) FROM "r_downtime_table" WHERE "machine_id" = '{ele.machine_id}';'''
-      downtime = db.engine.execute(sql).fetchone()
-      utilization_rate = int(worktime[0])/ (86400-int(downtime[0]))
-      prop['utilization_rate'] = utilization_rate
-      activation_rate = int(worktime[0]) / 86400
-      prop['activation_rate'] = activation_rate
+    #算良率
+    meterial = CMaterialTable.query.all()
+    m_sum = 0
+    m_ok = 0
+    for mtr in meterial:
+        m_sum += mtr.qty
+        m_ok += mtr.qty * mtr._yield
+    y =  m_ok / m_sum * 100
 
-      output.append(prop)
-    # 回傳資料
-  return jsonify(data =  output) 
-  # return "OK"
+    db2 = psycopg2.connect(database="dashboard", user="postgres", password="1qaz@WSX", host="140.114.60.61", port="11249")
+    cur = db2.cursor()
+    cur.execute('SELECT SUM ("qty") from "r_schedule_table";')
+    cr = int(cur.fetchone()[0])
+    cur.execute('SELECT COUNT (DISTINCT "machine_id") FROM "r_schedule_table";')
+    mr = int(cur.fetchone()[0])
+    output = {}
+
+    cur.execute('SELECT SUM(extract(epoch FROM "end_time") - extract(epoch FROM "start_time")) FROM "r_schedule_table";')
+    sum_work_time = int(cur.fetchone()[0])
+    cur.execute('SELECT SUM(extract(epoch FROM "end_time") - extract(epoch FROM "start_time")) FROM "r_downtime_table";')
+    sum_down_time = int(cur.fetchone()[0])
+    tu = 100 * sum_work_time / (86400 * mr - sum_down_time)
+
+
+    output['CAPACITY_REQ'] = cr
+    output['MACHINE_REQ'] = mr
+    output['OPEN_MACTION'] = open_mac
+    output['DOWN_MACTION'] = down_mac
+    output['TOTAL_UTILIZATION'] = tu
+    output['YIELD'] = y
+    return output
