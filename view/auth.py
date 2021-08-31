@@ -1,5 +1,5 @@
 from flask import request, session, Blueprint,jsonify
-from ..models.Model import CMemberTable
+from ..models.Model import CMemberTable,CAuthTable
 from ..config import db,bcrypt
 from flask_jwt_extended import create_access_token,get_jwt_identity,jwt_required
 
@@ -108,7 +108,7 @@ def GetAllUser():
       prop['NAME'] = ele.name
       output.append(prop)
       # 回傳資料
-    return jsonify(data =  output)
+    return jsonify(output)
 
 
 # 修改會員資料
@@ -135,6 +135,25 @@ def update():
   current_db_sessions.commit()
   return 'Success'
 
+# 修改會員資料
+@auth.route("/update_pwd", methods=['PUT'])
+@jwt_required()
+def update_pwd():
+  received_json_data = request.get_json()
+  password = received_json_data.get('PASSWORD')
+  update_account = get_jwt_identity()
+  userdata = CMemberTable.query.filter_by(account=update_account).first()
+  if password is not None or password !="":
+   # 密碼加密
+    pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
+    userdata.password = pwd
+
+    current_db_sessions = db.session.object_session(userdata)
+    current_db_sessions.commit()
+    return 'Success'
+  else:
+    return 'error: password is none'
+
 # 刪除使用者
 @jwt_required()
 @auth.route("/delete", methods=['DELETE'])
@@ -147,3 +166,45 @@ def delete():
  current_db_sessions.delete(userdata)
  current_db_sessions.commit()
  return 'Success'
+
+# 取得所有權限
+@auth.route('/get_auth', methods=['GET'])   
+# @jwt_required()
+def GetAuth():
+    output = []
+    # query當前user的資料
+    user = CAuthTable.query.all()
+    for ele in user:
+      prop = {}
+      prop['AUTH_ID'] = ele.auth_id
+      prop['AUTH_NAME'] = ele.auth_name
+      prop['MANAGER '] = ele.manager
+      output.append(prop)
+      # 回傳資料
+    return jsonify(output)
+
+# 取得所有部門
+@auth.route('/get_dept', methods=['GET'])   
+# @jwt_required()
+def Getdept():
+    output = []
+    # query當前user的資料
+    sql = f'''select DISTINCT dept from c_member_table order by dept'''
+    data = db.engine.execute(sql).fetchall()
+    for ele in data:
+      output.append(ele.dept)
+      # 回傳資料
+    return jsonify(output)
+
+# 取得所有廠區
+@auth.route('/get_fab', methods=['GET'])   
+# @jwt_required()
+def GetFab():
+    output = []
+    # query當前user的資料
+    sql = f'''select DISTINCT fab from c_member_table order by fab'''
+    data = db.engine.execute(sql).fetchall()
+    for ele in data:
+      output.append(ele.fab)
+      # 回傳資料
+    return jsonify(output)

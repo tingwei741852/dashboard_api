@@ -6,29 +6,27 @@ db = SQLAlchemy()
 
 
 
-t_c_auth_table = db.Table(
-    'c_auth_table',
-    db.Column('auth_id', db.SmallInteger),
-    db.Column('auth_name', db.String(10)),
-    db.Column('manager', db.Boolean)
-)
-# class CAuthTable(db.Model):
-#     __tablename__ = 'c_auth_table'
+# t_c_auth_table = db.Table(
+#     'c_auth_table',
+#     db.Column('auth_id', db.SmallInteger),
+#     db.Column('auth_name', db.String(10)),
+#     db.Column('manager', db.Boolean)
+# )
+class CAuthTable(db.Model):
+    __tablename__ = 'c_auth_table'
+    auth_id = db.Column('auth_id', db.SmallInteger, primary_key=True, unique=True)
+    auth_name = db.Column('auth_name', db.String(10))
+    manager = db.Column('manager', db.Boolean)
 
-#     auth_id = db.Column('auth_id', db.SmallInteger, primary_key=True, unique=True),
-#     auth_name = db.Column('auth_name', db.String(10)),
-#     manager = db.Column('manager', db.Boolean)
-
-#     def __init__(self,auth_id, auth_name, manager):
-#       self.auth_id = auth_id
-#       self.auth_name = auth_name
-#       self.manager = manager
+    def __init__(self,auth_id, auth_name, manager):
+      self.auth_id = auth_id
+      self.auth_name = auth_name
+      self.manager = manager
 
 
 
 class CMachineTable(db.Model):
     __tablename__ = 'c_machine_table'
-
     machine_id = db.Column(db.String(50), primary_key=True, unique=True)
     machine_name = db.Column(db.String(50))
     ope_id = db.Column(db.String(50))
