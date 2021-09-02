@@ -1,5 +1,6 @@
 import datetime
 from flask import  Blueprint,jsonify
+from werkzeug.exceptions import abort
 from ..models.Model import RScheduleTable,CMachineTable,RDowntimeTable,CMaterialTable
 from ..config import db,bcrypt
 from flask_jwt_extended import jwt_required
@@ -17,7 +18,7 @@ def get_arrangement_detail():
     arrangement_detail = RScheduleTable.query.all()
     # test = RDowntimeTable.query.all()
     if arrangement_detail is None:
-        return 'errors: there is  no data exist'
+      abort(400,'errors: there is  no data exist')
     for ele in arrangement_detail:
         prop = {}
         prop['ORDER_ID'] = ele.order_id
@@ -37,7 +38,7 @@ def get_machine_performance():
   # query當前user的資料
   machine = CMachineTable.query.all()
   if machine is None:
-      return 'errors: there is  no machine data exist'
+    abort(400,'errors: there is  no machine data exist')
   for ele in machine:
       prop = {}
       prop['MACHINE_ID'] = ele.machine_id

@@ -1,4 +1,4 @@
-from flask import request, session, Blueprint,jsonify
+from flask import request, session, Blueprint,jsonify,abort
 from ..models.Model import CMemberTable,CAuthTable
 from ..config import db,bcrypt
 from flask_jwt_extended import create_access_token,get_jwt_identity,jwt_required
@@ -14,6 +14,7 @@ def sign_up():
   #定義每個資料若為none的默認值，但account&password不可為none 
     account = received_json_data.get('ACCOUNT')
     password = "000000"
+    pwd_change = "y"
     name = received_json_data.get('NAME', '')
     auth_id = received_json_data.get('AUTH', 1)
     dept = received_json_data.get('DEPT', '')
@@ -22,14 +23,14 @@ def sign_up():
     mail = received_json_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
     if account is None:
-        return 'errors: account is None'
+      abort(400,'errors: account is None')
     #如果帳號已存在 ，回傳error
     if CMemberTable.query.filter_by(account = account).first() is not None:
-        return 'errors: account already exist'
+      abort(400,'errors: account already exist')
     # 密碼加密
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     # 定義member類別
-    user = CMemberTable(account, pwd, name, auth_id, dept, fab, tel, mail)
+    user = CMemberTable(account, pwd, name, auth_id, dept, fab, tel, mail, pwd_change)
     # 加入註冊資料
     db.session.add(user)
     db.session.commit()
@@ -44,23 +45,24 @@ def login():
     password = received_json_data.get('PASSWORD')
   #如果帳號或密碼為none ，回傳error
     if account is None or password is None:
-      return 'errors: account or password is None'
+      abort(400,'errors: account or password is None')
   #取得query user的第一筆data 
     userdata = CMemberTable.query.filter_by(account = account).first() 
   # 如果user data 為none，回傳error
     if userdata is  None:
-        return 'errors: account not exist'
+      abort(400,'errors: account not exist')
   # 取得密碼
     pwd = userdata.password
   #如果解密後的密碼與輸入的密碼時否一致，回傳error
     if not bcrypt.check_password_hash(pwd, password):   
-        return 'errors: password error'
+        abort(400,'errors: password error')
   # 取得token
     access_token = create_access_token(identity=account)
+    PWD_CHANGE = userdata.pwd_change
   # 設定session
     session['account'] = userdata.account
   #回傳token供前端使用 
-    return jsonify(access_token=access_token)
+    return jsonify(ACCESS_TOKEN=access_token , PWD_CHANGE = PWD_CHANGE)
 
 # 登出api
 @auth.route("/logout", methods=['DELETE'])
@@ -80,7 +82,7 @@ def GetUser():
     user_session = session.get('ACCOUNT')
     # 如果token 和user紀錄的session不一致，回傳error
     if not current_user_id ==  user_session:
-       return 'errors: token not exist'
+        abort(400,'errors: token not exist')
     # query當前user的資料
     user = CMemberTable.query.filter_by(account = current_user_id).first() 
     output['ACCOUNT'] = user.account
@@ -104,11 +106,30 @@ def GetAllUser():
       prop['FAB'] = ele.fab
       prop['AUTH'] = ele.auth_id
       prop['TEL'] = ele.tel
-      prop['MAUL'] = ele.mail
+      prop['MAIL'] = ele.mail
       prop['NAME'] = ele.name
       output.append(prop)
       # 回傳資料
     return jsonify(output)
+
+# 取得管理者
+@auth.route('/get_manager', methods=['GET'])
+def GetManager():
+    output = []
+    # query當前user的資料
+    sql = f'''select * from c_member_table a inner join c_auth_table b on a.auth_id = b.auth_id where b.manager  = 't';'''
+    user = db.engine.execute(sql).fetchone()
+    print(user)
+    prop = {}
+    prop['ACCOUNT'] = user[0]
+    prop['DEPT'] = user[4]
+    prop['FAB'] = user[5]
+    prop['AUTH'] = user[3]
+    prop['TEL'] = user[6]
+    prop['MAIL'] = user[7]
+    prop['NAME'] = user[2]
+      # 回傳資料
+    return jsonify(prop)
 
 
 # 修改會員資料
@@ -135,7 +156,7 @@ def update():
   current_db_sessions.commit()
   return 'Success'
 
-# 修改會員資料
+# 修改密碼
 @auth.route("/update_pwd", methods=['PUT'])
 @jwt_required()
 def update_pwd():
@@ -147,13 +168,33 @@ def update_pwd():
    # 密碼加密
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     userdata.password = pwd
+    userdata.pwd_change = False
 
     current_db_sessions = db.session.object_session(userdata)
     current_db_sessions.commit()
     return 'Success'
   else:
-    return 'error: password is none'
+    abort(400,'error: password is none')
 
+# 重設密碼
+@auth.route("/reset_pwd", methods=['PUT'])
+# @jwt_required()
+def reset_pwd():
+  received_json_data = request.get_json()
+  update_account = received_json_data.get('ACCOUNT')
+  password = '000000'
+  userdata = CMemberTable.query.filter_by(account=update_account).first()
+  if password is not None or password !="":
+   # 密碼加密
+    pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
+    userdata.password = pwd
+    userdata.pwd_change = True
+
+    current_db_sessions = db.session.object_session(userdata)
+    current_db_sessions.commit()
+    return 'Success'
+  else:
+    abort(400,'error: password is none')
 # 刪除使用者
 @jwt_required()
 @auth.route("/delete", methods=['DELETE'])

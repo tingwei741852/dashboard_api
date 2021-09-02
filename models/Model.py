@@ -67,8 +67,9 @@ class CMemberTable(db.Model):
     fab = db.Column(db.String(10))
     tel = db.Column(db.String(20))
     mail = db.Column(db.String(30))
+    pwd_change = db.Column(db.Boolean)
 
-    def __init__(self,account, password, name, auth_id, dept, fab, tel, mail):
+    def __init__(self,account, password, name, auth_id, dept, fab, tel, mail, pwd_change):
       self.account = account
       self.password = password
       self.name = name
@@ -77,6 +78,7 @@ class CMemberTable(db.Model):
       self.fab = fab
       self.tel = tel
       self.mail = mail
+      self.pwd_change = pwd_change
 
 # class UserSchema(Schema):
 #     account = fields.String(dump_only=True, required=True, validate=validate.Length(3))
