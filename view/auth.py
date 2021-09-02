@@ -23,10 +23,10 @@ def sign_up():
     mail = received_json_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
     if account is None:
-      abort(400,'errors: account is None')
+      return jsonify(message='errors: account is None'),400
     #如果帳號已存在 ，回傳error
     if CMemberTable.query.filter_by(account = account).first() is not None:
-      abort(400,'errors: account already exist')
+      return jsonify(message='errors: account already exist'),400
     # 密碼加密
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     # 定義member類別
@@ -45,17 +45,17 @@ def login():
     password = received_json_data.get('PASSWORD')
   #如果帳號或密碼為none ，回傳error
     if account is None or password is None:
-      abort(400,'errors: account or password is None')
+      return jsonify(message='errors: account or password is None'),400
   #取得query user的第一筆data 
     userdata = CMemberTable.query.filter_by(account = account).first() 
   # 如果user data 為none，回傳error
     if userdata is  None:
-      abort(400,'errors: account not exist')
+      return jsonify(message='errors: account not exist'),400
   # 取得密碼
     pwd = userdata.password
   #如果解密後的密碼與輸入的密碼時否一致，回傳error
-    if not bcrypt.check_password_hash(pwd, password):   
-        abort(400,'errors: password error')
+    if not bcrypt.check_password_hash(pwd, password): 
+      return jsonify(message='errors: password error'),400
   # 取得token
     access_token = create_access_token(identity=account)
     PWD_CHANGE = userdata.pwd_change
@@ -82,7 +82,7 @@ def GetUser():
     user_session = session.get('ACCOUNT')
     # 如果token 和user紀錄的session不一致，回傳error
     if not current_user_id ==  user_session:
-        abort(400,'errors: token not exist')
+      return jsonify(message='errors: token not exist'),400
     # query當前user的資料
     user = CMemberTable.query.filter_by(account = current_user_id).first() 
     output['ACCOUNT'] = user.account
@@ -174,7 +174,7 @@ def update_pwd():
     current_db_sessions.commit()
     return 'Success'
   else:
-    abort(400,'error: password is none')
+    return jsonify(message='error: password is none'),400
 
 # 重設密碼
 @auth.route("/reset_pwd", methods=['PUT'])
@@ -194,7 +194,7 @@ def reset_pwd():
     current_db_sessions.commit()
     return 'Success'
   else:
-    abort(400,'error: password is none')
+    return jsonify(message='error: password is none'),400
 # 刪除使用者
 @jwt_required()
 @auth.route("/delete", methods=['DELETE'])
