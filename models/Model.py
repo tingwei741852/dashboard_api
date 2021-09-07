@@ -165,3 +165,10 @@ class RScheduleTable(db.Model):
     machine = db.relationship('CMachineTable', primaryjoin='RScheduleTable.machine_id == CMachineTable.machine_id', backref='r_schedule_tables')
     order = db.relationship('CWipTable', primaryjoin='and_(RScheduleTable.order_id == CWipTable.order_id, RScheduleTable.lot_id == CWipTable.lot_id)', backref='r_schedule_tables')
 
+class RevokedTokenModel(db.Model):
+    __tablename__ = 'revoked_tokens'
+    id = db.Column(db.Integer, primary_key = True)
+    jti = db.Column(db.String(120))
+
+    def __init__(self,jti):
+      self.jti = jti

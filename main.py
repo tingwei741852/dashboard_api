@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from .view.auth import auth
 from .view.dashboard import dashboard
 from .config import db,jwt
+from datetime import timedelta
 
 
 # 從環境變數中取得連線資訊
@@ -18,8 +19,13 @@ print(db_host)
 # 初始化app
 app = Flask(__name__)
 # 設定jwt & session secret
+ACCESS_EXPIRES = timedelta(minutes=30)
 app.config['JWT_SECRET_KEY'] = os.urandom(24)
 app.config['SECRET_KEY'] = os.urandom(24)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
+# app.config['JWT_BLACKLIST_ENABLED'] = True
+# app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+blacklist = set()
 # 設定資料庫連線資訊
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://"+db_username+":"+db_password+"@"+db_host+":"+db_port+"/"+db_name+""

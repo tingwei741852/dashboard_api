@@ -1,10 +1,11 @@
 from flask import request, session, Blueprint,jsonify,abort
-from ..models.Model import CMemberTable,CAuthTable
-from ..config import db,bcrypt
-from flask_jwt_extended import create_access_token,get_jwt_identity,jwt_required
+from ..models.Model import CMemberTable,CAuthTable,RevokedTokenModel
+from ..config import db,bcrypt,jwt
+from flask_jwt_extended import (create_access_token,get_jwt_identity,jwt_required,get_jwt)
 
 # 初始化biueprint
 auth = Blueprint('auth', __name__)
+blacklist = set()
 
 # 註冊api
 @auth.route('/sign_up', methods=['POST'])
@@ -59,16 +60,22 @@ def login():
   # 取得token
     access_token = create_access_token(identity=account)
     PWD_CHANGE = userdata.pwd_change
-  # 設定session
-    session['account'] = userdata.account
   #回傳token供前端使用 
     return jsonify(ACCESS_TOKEN=access_token , PWD_CHANGE = PWD_CHANGE)
 
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload["jti"]
+    token = db.session.query(RevokedTokenModel.id).filter_by(jti=jti).scalar()
+    return token is not None
+    
 # 登出api
 @auth.route("/logout", methods=['DELETE'])
-def sign_out():
-  # 清除session
-    session['account'] = None
+@jwt_required()
+def logout():
+    jti = get_jwt()['jti']
+    db.session.add(RevokedTokenModel(jti=jti))
+    db.session.commit()
     return 'Success'
 
 # 取得當前使用者
@@ -78,19 +85,20 @@ def GetUser():
     output = {}
     # 取得當前token紀錄的user
     current_user_id = get_jwt_identity()
-    # 取得當前session紀錄的user
-    user_session = session.get('ACCOUNT')
-    # 如果token 和user紀錄的session不一致，回傳error
-    if not current_user_id ==  user_session:
-      return jsonify(message='errors: token not exist'),400
     # query當前user的資料
     user = CMemberTable.query.filter_by(account = current_user_id).first() 
     output['ACCOUNT'] = user.account
     output['DEPT'] = user.dept
     output['FAB'] = user.fab
     output['AUTH'] = user.auth_id
-    # 回傳資料
+    # 回傳資料 
     return output
+# @auth.route('/get_block', methods=['GET'])
+# @jwt.token_in_blocklist_loader
+# def check_if_token_is_revoked(jwt_header, jwt_payload):
+#     jti = jwt_payload["jti"]
+#     token_in_redis = blacklist.get(jti)
+#     return token_in_redis is not None
 
 # 取得所有使用者
 @auth.route('/get_alluser', methods=['GET'])   
@@ -115,7 +123,6 @@ def GetAllUser():
 # 取得管理者
 @auth.route('/get_manager', methods=['GET'])
 def GetManager():
-    output = []
     # query當前user的資料
     sql = f'''select * from c_member_table a inner join c_auth_table b on a.auth_id = b.auth_id where b.manager  = 't';'''
     user = db.engine.execute(sql).fetchone()
