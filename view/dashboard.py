@@ -18,7 +18,7 @@ def get_arrangement_detail():
     arrangement_detail = RScheduleTable.query.all()
     # test = RDowntimeTable.query.all()
     if arrangement_detail is None:
-      return jsonify(message='errors: there is  no data exist'),400
+      return jsonify(msg='errors: there is  no data exist'),400
     for ele in arrangement_detail:
         prop = {}
         prop['ORDER_ID'] = ele.order_id
@@ -38,7 +38,7 @@ def get_machine_performance():
   # query當前user的資料
   machine = CMachineTable.query.all()
   if machine is None:
-    return jsonify(message='errors: there is  no machine data exist'),400
+    return jsonify(msg='errors: there is  no machine data exist'),400
   for ele in machine:
       prop = {}
       prop['MACHINE_ID'] = ele.machine_id

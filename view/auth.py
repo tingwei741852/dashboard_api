@@ -24,10 +24,10 @@ def sign_up():
     mail = received_json_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
     if account is None:
-      return jsonify(message='errors: account is None'),400
+      return jsonify(msg='errors: account is None'),400
     #如果帳號已存在 ，回傳error
     if CMemberTable.query.filter_by(account = account).first() is not None:
-      return jsonify(message='errors: account already exist'),400
+      return jsonify(msg='errors: account already exist'),400
     # 密碼加密
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     # 定義member類別
@@ -46,17 +46,17 @@ def login():
     password = received_json_data.get('PASSWORD')
   #如果帳號或密碼為none ，回傳error
     if account is None or password is None:
-      return jsonify(message='errors: account or password is None'),400
+      return jsonify(msg='errors: account or password is None'),400
   #取得query user的第一筆data 
     userdata = CMemberTable.query.filter_by(account = account).first() 
   # 如果user data 為none，回傳error
     if userdata is  None:
-      return jsonify(message='errors: account not exist'),400
+      return jsonify(msg='errors: account not exist'),400
   # 取得密碼
     pwd = userdata.password
   #如果解密後的密碼與輸入的密碼時否一致，回傳error
     if not bcrypt.check_password_hash(pwd, password): 
-      return jsonify(message='errors: password error'),400
+      return jsonify(msg='errors: password error'),400
   # 取得token
     access_token = create_access_token(identity=account)
     PWD_CHANGE = userdata.pwd_change
@@ -68,7 +68,7 @@ def check_if_token_revoked(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
     token = db.session.query(RevokedTokenModel.id).filter_by(jti=jti).scalar()
     return token is not None
-    
+
 # 登出api
 @auth.route("/logout", methods=['DELETE'])
 @jwt_required()
@@ -156,7 +156,6 @@ def update():
   # userdata.name = 'name2'
   for col in ele:
     if  ele.get(col) is not None:
-      print(getattr(userdata,col))
       setattr(userdata,col,ele.get(col))
 
   current_db_sessions = db.session.object_session(userdata)
@@ -181,7 +180,7 @@ def update_pwd():
     current_db_sessions.commit()
     return 'Success'
   else:
-    return jsonify(message='error: password is none'),400
+    return jsonify(msg='error: password is none'),400
 
 # 重設密碼
 @auth.route("/reset_pwd", methods=['PUT'])
@@ -201,7 +200,7 @@ def reset_pwd():
     current_db_sessions.commit()
     return 'Success'
   else:
-    return jsonify(message='error: password is none'),400
+    return jsonify(msg='error: password is none'),400
 # 刪除使用者
 @jwt_required()
 @auth.route("/delete", methods=['DELETE'])
