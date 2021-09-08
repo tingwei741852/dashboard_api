@@ -6,6 +6,7 @@ from .view.auth import auth
 from .view.dashboard import dashboard
 from .config import db,jwt
 from datetime import timedelta
+from flask_cors import CORS
 
 
 # 從環境變數中取得連線資訊
@@ -35,7 +36,8 @@ jwt.init_app(app)
 # 註冊blueprint
 app.register_blueprint(auth,url_prefix= '/auth')
 app.register_blueprint(dashboard,url_prefix= '/dashboard')
-
+# 設置CORS
+CORS(app)
 
 # run app
 if __name__ == '__main__':

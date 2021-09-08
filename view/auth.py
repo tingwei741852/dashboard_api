@@ -145,12 +145,12 @@ def GetManager():
 def update():
   received_json_data = request.get_json()
   ele ={}
-  ele['NAME'] = received_json_data.get('NAME')
-  ele['AUTH'] = received_json_data.get('AUTH')
-  ele['DEPT'] = received_json_data.get('DEPT')
-  ele['FAB'] = received_json_data.get('FAB')
-  ele['TEL'] = received_json_data.get('TEL')
-  ele['MAIL'] = received_json_data.get('MAIL')
+  ele['name'] = received_json_data.get('NAME')
+  ele['auth'] = received_json_data.get('AUTH')
+  ele['dept'] = received_json_data.get('DEPT')
+  ele['fab'] = received_json_data.get('FAB')
+  ele['tel'] = received_json_data.get('TEL')
+  ele['mail'] = received_json_data.get('MAIL')
   update_account = received_json_data.get('ACCOUNT')
   userdata = CMemberTable.query.filter_by(account=update_account).first()
   # userdata.name = 'name2'
