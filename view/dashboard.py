@@ -11,7 +11,7 @@ from flask_jwt_extended import jwt_required
 dashboard = Blueprint('dashboard', __name__)
 
 @dashboard.route('/arrangement', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_arrangement_detail():
     output = []
     # query當前user的資料
@@ -32,7 +32,7 @@ def get_arrangement_detail():
     return jsonify(output)
 
 @dashboard.route('/machine_performance', methods=['GET'])
-
+@jwt_required()
 def get_machine_performance():
   output = []
   # query當前user的資料
@@ -62,6 +62,7 @@ def get_machine_performance():
   # return "OK"
 
 @dashboard.route('/down_time', methods=['GET'])
+@jwt_required()
 def Downtime():
     output = []
     machine = RDowntimeTable.query.all()
@@ -85,6 +86,7 @@ def Downtime():
 '''
 
 @dashboard.route('/total_API', methods=['GET'])
+@jwt_required()
 def TotalAPI():
     #數現在有多少機台不能動
     machine = RDowntimeTable.query.all()

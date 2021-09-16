@@ -1,7 +1,8 @@
 from flask import request, session, Blueprint,jsonify,abort
-from ..models.Model import CMemberTable,CAuthTable,RevokedTokenModel
+from ..models.Model import CMemberTable,CAuthTable,RevokedTokenModel,CMemberlogTable
 from ..config import db,bcrypt,jwt
 from flask_jwt_extended import (create_access_token,get_jwt_identity,jwt_required,get_jwt)
+import time
 
 # 初始化biueprint
 auth = Blueprint('auth', __name__)
@@ -145,23 +146,52 @@ def GetManager():
 def update():
   received_json_data = request.get_json()
   ele ={}
-  ele['name'] = received_json_data.get('NAME')
-  ele['auth'] = received_json_data.get('AUTH')
-  ele['dept'] = received_json_data.get('DEPT')
-  ele['fab'] = received_json_data.get('FAB')
-  ele['tel'] = received_json_data.get('TEL')
-  ele['mail'] = received_json_data.get('MAIL')
+  ele['name'] = [received_json_data.get('NAME'),"姓名"]
+  ele['auth_id'] = [received_json_data.get('AUTH'),"權限"]
+  ele['dept'] = [received_json_data.get('DEPT'),"部門"]
+  ele['fab'] = [received_json_data.get('FAB'),"廠區"]
+  ele['tel'] = [received_json_data.get('TEL'),"電話"]
+  ele['mail'] = [received_json_data.get('MAIL'),"信箱"]
   update_account = received_json_data.get('ACCOUNT')
   userdata = CMemberTable.query.filter_by(account=update_account).first()
+  current_user_id = get_jwt_identity()
+  localtime = time.localtime()
+  timestamp = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
+  updatestr = "用戶"+str(current_user_id)+"將用戶"+userdata.account
   # userdata.name = 'name2'
+  sep = " "
   for col in ele:
-    if  ele.get(col) is not None:
-      setattr(userdata,col,ele.get(col))
+    if  ele.get(col)[0] is not None:
+      if ele.get(col)[0]!=getattr(userdata,col):
+        updatestr=updatestr+sep+ele.get(col)[1]+"從"+getattr(userdata,col)+"修改為"+ele.get(col)[0]
+        setattr(userdata,col,ele.get(col)[0])
+        sep=", "
 
+  if sep !=" ":
+    log = CMemberlogTable(update_account,timestamp,updatestr)
+    print(updatestr)
+    db.session.add(log)
+    db.session.commit()
   current_db_sessions = db.session.object_session(userdata)
   current_db_sessions.commit()
   return 'Success'
 
+# 取得修改log
+@auth.route('/get_updatelog', methods=['POST'])
+@jwt_required()
+def GetUpdateLog():
+    received_json_data = request.get_json()
+    account = received_json_data.get('ACCOUNT')
+    output = []
+    logdata = CMemberlogTable.query.filter_by(account = account)
+    for ele in logdata:
+      prop = {}
+      prop['ACCOUNT'] = ele.account
+      prop['NOTE'] = ele.note
+      prop['TIME'] = ele.TIMESTAMP.strftime("%Y-%m-%d %H:%M:%S")
+      output.append(prop)
+      # 回傳資料
+    return jsonify(output)
 # 修改密碼
 @auth.route("/update_pwd", methods=['PUT'])
 @jwt_required()

@@ -95,12 +95,15 @@ class CMemberTable(db.Model):
 class CMemberlogTable(db.Model):
     __tablename__ = 'c_memberlog_table'
 
-    log_id = db.Column(db.String(15), primary_key=True, unique=True)
+    log_id = db.Column(db.Integer, primary_key=True, unique=True)
     account = db.Column(db.ForeignKey('c_member_table.account', ondelete='RESTRICT', onupdate='RESTRICT'), nullable=False, index=True)
     TIMESTAMP = db.Column(db.Date, nullable=False)
     note = db.Column(db.String(60))
-
     c_member_table = db.relationship('CMemberTable', primaryjoin='CMemberlogTable.account == CMemberTable.account', backref='c_memberlog_tables')
+    def __init__(self,account, TIMESTAMP, note):
+      self.account = account
+      self.TIMESTAMP = TIMESTAMP
+      self.note = note
 
 
 
