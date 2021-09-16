@@ -11,24 +11,25 @@ blacklist = set()
 # 註冊api
 @auth.route('/sign_up', methods=['POST'])
 def sign_up():
-  # 取得request資料
-    received_json_data = request.get_json()
-  #定義每個資料若為none的默認值，但account&password不可為none 
-    account = received_json_data.get('ACCOUNT')
+# 取得request資料
+  received_json_data = request.get_json()
+#定義每個資料若為none的默認值，但account&password不可為none 
+  for add_data in received_json_data:
+    account = add_data.get('ACCOUNT')
     password = "000000"
-    pwd_change = "y"
-    name = received_json_data.get('NAME', '')
-    auth_id = received_json_data.get('AUTH', 1)
-    dept = received_json_data.get('DEPT', '')
-    fab = received_json_data.get('FAB', '')
-    tel = received_json_data.get('TEL', '')
-    mail = received_json_data.get('MAIL', '')
+    pwd_change = True
+    name = add_data.get('NAME', '')
+    auth_id = add_data.get('AUTH', 1)
+    dept = add_data.get('DEPT', '')
+    fab = add_data.get('FAB', '')
+    tel = add_data.get('TEL', '')
+    mail = add_data.get('MAIL', '')
     # 如果account or password 為none，回傳error
     if account is None:
       return jsonify(msg='errors: account is None'),400
     #如果帳號已存在 ，回傳error
     if CMemberTable.query.filter_by(account = account).first() is not None:
-      return jsonify(msg='errors: account already exist'),400
+      return jsonify(msg='errors: '+account+' already exist'),400
     # 密碼加密
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     # 定義member類別
@@ -36,7 +37,7 @@ def sign_up():
     # 加入註冊資料
     db.session.add(user)
     db.session.commit()
-    return 'Success'
+  return 'Success'
 
 # 登入api
 @auth.route('/login', methods=['POST'])
@@ -237,11 +238,14 @@ def reset_pwd():
 def delete():
  
  received_json_data = request.get_json()
- delete_account = received_json_data.get('ACCOUNT')
- userdata = CMemberTable.query.filter_by(account=delete_account).first()
- current_db_sessions = db.session.object_session(userdata)
- current_db_sessions.delete(userdata)
- current_db_sessions.commit()
+ print(received_json_data)
+#  delete_account = received_json_data.get('ACCOUNT')
+ for delete_account in received_json_data:
+  print(delete_account)
+  userdata = CMemberTable.query.filter_by(account=delete_account).first()
+  current_db_sessions = db.session.object_session(userdata)
+  current_db_sessions.delete(userdata)
+  current_db_sessions.commit()
  return 'Success'
 
 # 取得所有權限
