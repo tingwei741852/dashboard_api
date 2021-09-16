@@ -10,9 +10,11 @@ blacklist = set()
 
 # 註冊api
 @auth.route('/sign_up', methods=['POST'])
+@jwt_required()
 def sign_up():
 # 取得request資料
   received_json_data = request.get_json()
+  userlist =[]
 #定義每個資料若為none的默認值，但account&password不可為none 
   for add_data in received_json_data:
     account = add_data.get('ACCOUNT')
@@ -35,8 +37,10 @@ def sign_up():
     # 定義member類別
     user = CMemberTable(account, pwd, name, auth_id, dept, fab, tel, mail, pwd_change)
     # 加入註冊資料
-    db.session.add(user)
-    db.session.commit()
+    userlist.append(user)
+  # 加入DB
+  db.session.add_all(userlist)
+  db.session.commit()
   return 'Success'
 
 # 登入api
@@ -104,7 +108,7 @@ def GetUser():
 
 # 取得所有使用者
 @auth.route('/get_alluser', methods=['GET'])   
-# @jwt_required()
+@jwt_required()
 def GetAllUser():
     output = []
     # query當前user的資料
@@ -215,7 +219,7 @@ def update_pwd():
 
 # 重設密碼
 @auth.route("/reset_pwd", methods=['PUT'])
-# @jwt_required()
+@jwt_required()
 def reset_pwd():
   received_json_data = request.get_json()
   update_account = received_json_data.get('ACCOUNT')
@@ -233,8 +237,8 @@ def reset_pwd():
   else:
     return jsonify(msg='error: password is none'),400
 # 刪除使用者
-@jwt_required()
 @auth.route("/delete", methods=['DELETE'])
+@jwt_required()
 def delete():
  
  received_json_data = request.get_json()
@@ -250,7 +254,7 @@ def delete():
 
 # 取得所有權限
 @auth.route('/get_auth', methods=['GET'])   
-# @jwt_required()
+@jwt_required()
 def GetAuth():
     output = []
     # query當前user的資料
@@ -266,7 +270,7 @@ def GetAuth():
 
 # 取得所有部門
 @auth.route('/get_dept', methods=['GET'])   
-# @jwt_required()
+@jwt_required()
 def Getdept():
     output = []
     # query當前user的資料
@@ -279,7 +283,7 @@ def Getdept():
 
 # 取得所有廠區
 @auth.route('/get_fab', methods=['GET'])   
-# @jwt_required()
+@jwt_required()
 def GetFab():
     output = []
     # query當前user的資料
