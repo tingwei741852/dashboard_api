@@ -261,9 +261,9 @@ def GetAuth():
     user = CAuthTable.query.all()
     for ele in user:
       prop = {}
-      prop['AUTH_ID'] = ele.auth_id
+      prop['AUTH'] = ele.auth_id
       prop['AUTH_NAME'] = ele.auth_name
-      prop['MANAGER '] = ele.manager
+      prop['MANAGER'] = ele.manager
       output.append(prop)
       # 回傳資料
     return jsonify(output)
