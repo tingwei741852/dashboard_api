@@ -183,7 +183,7 @@ def update():
 
 # 取得修改log
 @auth.route('/get_updatelog', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def GetUpdateLog():
     received_json_data = request.get_json()
     account = received_json_data.get('ACCOUNT')
@@ -210,6 +210,12 @@ def update_pwd():
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     userdata.password = pwd
     userdata.pwd_change = False
+    localtime = time.localtime()
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
+    updatestr = "用戶"+str(update_account)+"修改了該使用者的密碼"
+    log = CMemberlogTable(update_account,timestamp,updatestr)
+    db.session.add(log)
+    db.session.commit()
 
     current_db_sessions = db.session.object_session(userdata)
     current_db_sessions.commit()
@@ -222,6 +228,7 @@ def update_pwd():
 @jwt_required()
 def reset_pwd():
   received_json_data = request.get_json()
+  current_user_id = get_jwt_identity()
   update_account = received_json_data.get('ACCOUNT')
   password = '000000'
   userdata = CMemberTable.query.filter_by(account=update_account).first()
@@ -230,6 +237,12 @@ def reset_pwd():
     pwd = bcrypt.generate_password_hash(password=password).decode('utf-8')
     userdata.password = pwd
     userdata.pwd_change = True
+    localtime = time.localtime()
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
+    updatestr = "用戶"+str(current_user_id)+"修改了該使用者的密碼"
+    log = CMemberlogTable(update_account,timestamp,updatestr)
+    db.session.add(log)
+    db.session.commit()
 
     current_db_sessions = db.session.object_session(userdata)
     current_db_sessions.commit()
