@@ -168,7 +168,7 @@ def update():
   for col in ele:
     if  ele.get(col)[0] is not None:
       if ele.get(col)[0]!=getattr(userdata,col):
-        updatestr=updatestr+sep+ele.get(col)[1]+"從"+getattr(userdata,col)+"修改為"+ele.get(col)[0]
+        updatestr=updatestr+sep+ele.get(col)[1]+"從"+str(getattr(userdata,col))+"修改為"+str(ele.get(col)[0])
         setattr(userdata,col,ele.get(col)[0])
         sep=", "
 
