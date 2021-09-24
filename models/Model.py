@@ -1,6 +1,7 @@
 # coding: utf-8
 from flask_sqlalchemy import SQLAlchemy
-
+from sqlalchemy import Column, Integer, String
+from ..config import Base
 
 db = SQLAlchemy()
 
@@ -12,7 +13,7 @@ db = SQLAlchemy()
 #     db.Column('auth_name', db.String(10)),
 #     db.Column('manager', db.Boolean)
 # )
-class CAuthTable(db.Model):
+class CAuthTable(Base):
     __tablename__ = 'c_auth_table'
     auth_id = db.Column('auth_id', db.SmallInteger, primary_key=True, unique=True)
     auth_name = db.Column('auth_name', db.String(10))
@@ -25,7 +26,7 @@ class CAuthTable(db.Model):
 
 
 
-class CMachineTable(db.Model):
+class CMachineTable(Base):
     __tablename__ = 'c_machine_table'
     machine_id = db.Column(db.String(50), primary_key=True, unique=True)
     machine_name = db.Column(db.String(50))
@@ -40,7 +41,7 @@ class CMachineTable(db.Model):
 
 
 
-class CMaterialTable(db.Model):
+class CMaterialTable(Base):
     __tablename__ = 'c_material_table'
 
     material_id = db.Column(db.String(50), primary_key=True, unique=True)
@@ -56,7 +57,7 @@ class CMaterialTable(db.Model):
 
 
 
-class CMemberTable(db.Model):
+class CMemberTable(Base):
     __tablename__ = 'c_member_table'
 
     account = db.Column(db.String(20), primary_key=True, unique=True)
@@ -92,7 +93,7 @@ class CMemberTable(db.Model):
 
 
 
-class CMemberlogTable(db.Model):
+class CMemberlogTable(Base):
     __tablename__ = 'c_memberlog_table'
 
     log_id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -107,7 +108,7 @@ class CMemberlogTable(db.Model):
 
 
 
-class COpeTable(db.Model):
+class COpeTable(Base):
     __tablename__ = 'c_ope_table'
 
     ope_id = db.Column(db.String(50), primary_key=True, unique=True)
@@ -117,7 +118,7 @@ class COpeTable(db.Model):
 
 
 
-class CWipTable(db.Model):
+class CWipTable(Base):
     __tablename__ = 'c_wip_table'
     __table_args__ = (
         db.Index('c_wip_table_pk', 'order_id', 'lot_id'),
@@ -138,7 +139,7 @@ class CWipTable(db.Model):
 
 
 
-class RDowntimeTable(db.Model):
+class RDowntimeTable(Base):
     __tablename__ = 'r_downtime_table'
 
     start_time = db.Column(db.String(50), primary_key=True, unique=True)
@@ -150,7 +151,7 @@ class RDowntimeTable(db.Model):
 
 
 
-class RScheduleTable(db.Model):
+class RScheduleTable(Base):
     __tablename__ = 'r_schedule_table'
     __table_args__ = (
         db.ForeignKeyConstraint(['order_id', 'lot_id'], ['c_wip_table.order_id', 'c_wip_table.lot_id'], ondelete='RESTRICT', onupdate='RESTRICT'),
@@ -168,7 +169,7 @@ class RScheduleTable(db.Model):
     machine = db.relationship('CMachineTable', primaryjoin='RScheduleTable.machine_id == CMachineTable.machine_id', backref='r_schedule_tables')
     order = db.relationship('CWipTable', primaryjoin='and_(RScheduleTable.order_id == CWipTable.order_id, RScheduleTable.lot_id == CWipTable.lot_id)', backref='r_schedule_tables')
 
-class RevokedTokenModel(db.Model):
+class RevokedTokenModel(Base):
     __tablename__ = 'revoked_tokens'
     id = db.Column(db.Integer, primary_key = True)
     jti = db.Column(db.String(120))

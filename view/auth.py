@@ -1,6 +1,6 @@
 from flask import request, session, Blueprint,jsonify,abort
 from ..models.Model import CMemberTable,CAuthTable,RevokedTokenModel,CMemberlogTable
-from ..config import db,bcrypt,jwt
+from ..config import session,engine,bcrypt,jwt
 from flask_jwt_extended import (create_access_token,get_jwt_identity,jwt_required,get_jwt)
 import time
 
@@ -39,8 +39,9 @@ def sign_up():
     # 加入註冊資料
     userlist.append(user)
   # 加入DB
-  db.session.add_all(userlist)
-  db.session.commit()
+  session.add_all(userlist)
+  session.commit()
+  session.remove()
   return 'Success'
 
 # 登入api
@@ -67,12 +68,14 @@ def login():
     access_token = create_access_token(identity=account)
     PWD_CHANGE = userdata.pwd_change
   #回傳token供前端使用 
+    session.remove()
     return jsonify(ACCESS_TOKEN=access_token , PWD_CHANGE = PWD_CHANGE)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
-    token = db.session.query(RevokedTokenModel.id).filter_by(jti=jti).scalar()
+    token = session.query(RevokedTokenModel.id).filter_by(jti=jti).scalar()
+    session.remove()
     return token is not None
 
 # 登出api
@@ -80,8 +83,9 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 @jwt_required()
 def logout():
     jti = get_jwt()['jti']
-    db.session.add(RevokedTokenModel(jti=jti))
-    db.session.commit()
+    session.add(RevokedTokenModel(jti=jti))
+    session.commit()
+    session.remove()
     return 'Success'
 
 # 取得當前使用者
@@ -98,13 +102,8 @@ def GetUser():
     output['FAB'] = user.fab
     output['AUTH'] = user.auth_id
     # 回傳資料 
+    session.remove()
     return output
-# @auth.route('/get_block', methods=['GET'])
-# @jwt.token_in_blocklist_loader
-# def check_if_token_is_revoked(jwt_header, jwt_payload):
-#     jti = jwt_payload["jti"]
-#     token_in_redis = blacklist.get(jti)
-#     return token_in_redis is not None
 
 # 取得所有使用者
 @auth.route('/get_alluser', methods=['GET'])   
@@ -124,6 +123,7 @@ def GetAllUser():
       prop['NAME'] = ele.name
       output.append(prop)
       # 回傳資料
+    session.remove()
     return jsonify(output)
 
 # 取得管理者
@@ -131,8 +131,7 @@ def GetAllUser():
 def GetManager():
     # query當前user的資料
     sql = f'''select * from c_member_table a inner join c_auth_table b on a.auth_id = b.auth_id where b.manager  = 't';'''
-    user = db.engine.execute(sql).fetchone()
-    print(user)
+    user = engine.execute(sql).fetchone()
     prop = {}
     prop['ACCOUNT'] = user[0]
     prop['DEPT'] = user[4]
@@ -142,6 +141,7 @@ def GetManager():
     prop['MAIL'] = user[7]
     prop['NAME'] = user[2]
       # 回傳資料
+    session.remove()
     return jsonify(prop)
 
 
@@ -175,10 +175,11 @@ def update():
   if sep !=" ":
     log = CMemberlogTable(update_account,timestamp,updatestr)
     print(updatestr)
-    db.session.add(log)
-    db.session.commit()
-  current_db_sessions = db.session.object_session(userdata)
+    session.add(log)
+    session.commit()
+  current_db_sessions = session.object_session(userdata)
   current_db_sessions.commit()
+  current_db_sessions.remove()
   return 'Success'
 
 # 取得修改log
@@ -196,6 +197,7 @@ def GetUpdateLog():
       prop['TIME'] = ele.TIMESTAMP.strftime("%Y-%m-%d %H:%M:%S")
       output.append(prop)
       # 回傳資料
+    session.remove()
     return jsonify(output)
 # 修改密碼
 @auth.route("/update_pwd", methods=['PUT'])
@@ -214,11 +216,12 @@ def update_pwd():
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
     updatestr = "用戶"+str(update_account)+"修改了該使用者的密碼"
     log = CMemberlogTable(update_account,timestamp,updatestr)
-    db.session.add(log)
-    db.session.commit()
-
-    current_db_sessions = db.session.object_session(userdata)
+    session.add(log)
+    session.commit()
+    session.remove()
+    current_db_sessions = session.object_session(userdata)
     current_db_sessions.commit()
+    current_db_sessions.remove()
     return 'Success'
   else:
     return jsonify(msg='error: password is none'),400
@@ -241,11 +244,12 @@ def reset_pwd():
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", localtime)
     updatestr = "用戶"+str(current_user_id)+"修改了該使用者的密碼"
     log = CMemberlogTable(update_account,timestamp,updatestr)
-    db.session.add(log)
-    db.session.commit()
-
-    current_db_sessions = db.session.object_session(userdata)
+    session.add(log)
+    session.commit()
+    session.remove()
+    current_db_sessions = session.object_session(userdata)
     current_db_sessions.commit()
+    current_db_sessions.remove()
     return 'Success'
   else:
     return jsonify(msg='error: password is none'),400
@@ -253,33 +257,33 @@ def reset_pwd():
 @auth.route("/delete", methods=['DELETE'])
 @jwt_required()
 def delete():
- 
  received_json_data = request.get_json()
  print(received_json_data)
 #  delete_account = received_json_data.get('ACCOUNT')
  for delete_account in received_json_data:
-  print(delete_account)
   userdata = CMemberTable.query.filter_by(account=delete_account).first()
-  current_db_sessions = db.session.object_session(userdata)
+  current_db_sessions = session.object_session(userdata)
   current_db_sessions.delete(userdata)
   current_db_sessions.commit()
+ current_db_sessions.remove()
  return 'Success'
 
 # 取得所有權限
 @auth.route('/get_auth', methods=['GET'])   
 @jwt_required()
 def GetAuth():
-    output = []
-    # query當前user的資料
-    user = CAuthTable.query.all()
-    for ele in user:
-      prop = {}
-      prop['AUTH'] = ele.auth_id
-      prop['AUTH_NAME'] = ele.auth_name
-      prop['MANAGER'] = ele.manager
-      output.append(prop)
-      # 回傳資料
-    return jsonify(output)
+  output = []
+  # query所有權限
+  user = CAuthTable.query.all()
+  for ele in user:
+    prop = {}
+    prop['AUTH'] = ele.auth_id
+    prop['AUTH_NAME'] = ele.auth_name
+    prop['MANAGER'] = ele.manager
+    output.append(prop)
+  session.remove()
+    # 回傳資料
+  return jsonify(output)
 
 # 取得所有部門
 @auth.route('/get_dept', methods=['GET'])   
@@ -288,9 +292,10 @@ def Getdept():
     output = []
     # query當前user的資料
     sql = f'''select DISTINCT dept from c_member_table order by dept'''
-    data = db.engine.execute(sql).fetchall()
+    data = engine.execute(sql).fetchall()
     for ele in data:
       output.append(ele.dept)
+    session.remove()
       # 回傳資料
     return jsonify(output)
 
@@ -301,8 +306,9 @@ def GetFab():
     output = []
     # query當前user的資料
     sql = f'''select DISTINCT fab from c_member_table order by fab'''
-    data = db.engine.execute(sql).fetchall()
+    data = engine.execute(sql).fetchall()
     for ele in data:
       output.append(ele.fab)
+    session.remove()
       # 回傳資料
     return jsonify(output)
