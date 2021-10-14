@@ -179,7 +179,7 @@ def update():
     session.commit()
   current_db_sessions = session.object_session(userdata)
   current_db_sessions.commit()
-  current_db_sessions.remove()
+  session.remove()
   return 'Success'
 
 # 取得修改log
@@ -221,7 +221,7 @@ def update_pwd():
     session.remove()
     current_db_sessions = session.object_session(userdata)
     current_db_sessions.commit()
-    current_db_sessions.remove()
+    session.remove()
     return 'Success'
   else:
     return jsonify(msg='error: password is none'),400
@@ -249,7 +249,7 @@ def reset_pwd():
     session.remove()
     current_db_sessions = session.object_session(userdata)
     current_db_sessions.commit()
-    current_db_sessions.remove()
+    session.remove()
     return 'Success'
   else:
     return jsonify(msg='error: password is none'),400
@@ -265,7 +265,7 @@ def delete():
   current_db_sessions = session.object_session(userdata)
   current_db_sessions.delete(userdata)
   current_db_sessions.commit()
- current_db_sessions.remove()
+ session.remove()
  return 'Success'
 
 # 取得所有權限
